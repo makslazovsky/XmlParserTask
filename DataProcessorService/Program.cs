@@ -1,10 +1,16 @@
 using DataProcessorService;
+using Microsoft.EntityFrameworkCore;
 
-IHost host = Host.CreateDefaultBuilder(args)
-    .ConfigureServices(services =>
-    {
-        services.AddHostedService<Worker>();
-    })
-    .Build();
+var builder = Host.CreateDefaultBuilder(args);
+
+builder.ConfigureServices((context, services) =>
+{
+    services.AddDbContext<AppDbContext>(options =>
+        options.UseSqlite(context.Configuration.GetConnectionString("AppDbContext")));
+
+    services.AddHostedService<Worker>();
+});
+
+var host = builder.Build();
 
 await host.RunAsync();
