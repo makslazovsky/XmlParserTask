@@ -1,5 +1,6 @@
 using Newtonsoft.Json;
 using RabbitMQ.Client;
+using Serilog;
 using SharedLibrary.Models;
 using SharedLibrary.Utilities;
 using System.Text;
@@ -24,6 +25,10 @@ namespace FileParserService
 
             var factory = RabbitMQConnectionFactory.CreateConnectionFactory(configuration);
             _rabbitMQConnection = factory.CreateConnection();
+
+            Log.Logger = new LoggerConfiguration()
+           .WriteTo.File("Logs/log.txt", rollingInterval: RollingInterval.Day)
+           .CreateLogger();
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -40,8 +45,10 @@ namespace FileParserService
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError($"An error occurred: {ex.Message}");
+                    Log.Error(ex, "An error occurred");
+                    _logger.LogError(ex, "An error occurred");
                 }
+
             }
         }
 
@@ -49,7 +56,7 @@ namespace FileParserService
         {
             string directoryPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "XmlFiles");
 
-            // Создайте папку, если её нет
+            // Создание папки, если её нет
             if (!Directory.Exists(directoryPath))
             {
                 Directory.CreateDirectory(directoryPath);
@@ -64,7 +71,6 @@ namespace FileParserService
                     xmlDoc.Load(filePath);
 
                     // Парсинг XML данных и изменение ModuleState
-                    // (здесь предполагается, что структура XML известна)
                     var modules = ParseXml(xmlDoc);
 
                     // Формирование JSON
@@ -75,7 +81,8 @@ namespace FileParserService
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError($"An error occurred while processing {filePath}: {ex.Message}");
+                    Log.Error(ex, "An error occurred while processing {FilePath}", filePath);
+                    _logger.LogError(ex, "An error occurred while processing {FilePath}", filePath);
                 }
             }
         }
@@ -122,14 +129,21 @@ namespace FileParserService
                                      routingKey: "DataProcessorQueue",
                                      basicProperties: null,
                                      body: body);
-
+                Log.Information($"Sent message to DataProcessor: {jsonResult}");
                 _logger.LogInformation($"Sent message to DataProcessor: {jsonResult}");
             }
         }
 
         public override async Task StopAsync(CancellationToken cancellationToken)
         {
-            _rabbitMQConnection.Close();
+            try
+            {
+                _rabbitMQConnection.Close();
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Ошибка при остановке сервиса");
+            }
             await base.StopAsync(cancellationToken);
         }
     }

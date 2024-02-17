@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
+using Serilog;
 using SharedLibrary.Models;
 using SharedLibrary.Utilities;
 
@@ -25,6 +26,10 @@ namespace DataProcessorService
 
             var factory = RabbitMQConnectionFactory.CreateConnectionFactory(configuration);
             _rabbitMQConnection = factory.CreateConnection();
+
+            Log.Logger = new LoggerConfiguration()
+            .WriteTo.File("Logs/log.txt", rollingInterval: RollingInterval.Day)
+            .CreateLogger();
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -40,15 +45,22 @@ namespace DataProcessorService
                 var consumer = new EventingBasicConsumer(channel);
                 consumer.Received += async (model, ea) =>
                 {
-                    var body = ea.Body.ToArray();
-                    var jsonMessage = Encoding.UTF8.GetString(body);
-                    var module = JsonConvert.DeserializeObject<List<Module>>(jsonMessage);
+                    try
+                    {
+                        var body = ea.Body.ToArray();
+                        var jsonMessage = Encoding.UTF8.GetString(body);
+                        var module = JsonConvert.DeserializeObject<List<Module>>(jsonMessage);
 
-                    // Обработка сообщения
-                    await ProcessMessage(module);
+                        // Обработка сообщения
+                        await ProcessMessage(module);
 
-                    // Подтверждение обработки сообщения
-                    channel.BasicAck(deliveryTag: ea.DeliveryTag, multiple: false);
+                        // Подтверждение обработки сообщения
+                        channel.BasicAck(deliveryTag: ea.DeliveryTag, multiple: false);
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Error(ex, "Ошибка при обработке сообщения");
+                    }
                 };
 
                 channel.BasicConsume(queue: "DataProcessorQueue",
@@ -68,28 +80,42 @@ namespace DataProcessorService
             {
                 var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
-                // Проверка существования ModuleCategoryID в базе данных
-                foreach (var module in modules)
+                try
                 {
-                    var existingModule = await dbContext.Modules.FirstOrDefaultAsync(m => m.ModuleId == module.ModuleId);
+                    // Проверка существования ModuleCategoryID в базе данных
+                    foreach (var module in modules)
+                    {
+                        var existingModule = await dbContext.Modules.FirstOrDefaultAsync(m => m.ModuleId == module.ModuleId);
 
-                    if (existingModule != null)
-                    {
-                        existingModule.ModuleState = module.ModuleState;
+                        if (existingModule != null)
+                        {
+                            existingModule.ModuleState = module.ModuleState;
+                        }
+                        else
+                        {
+                            dbContext.Modules.Add(module);
+                        }
                     }
-                    else
-                    {
-                        dbContext.Modules.Add(module);
-                    }
+
+                    await dbContext.SaveChangesAsync();
                 }
-
-                await dbContext.SaveChangesAsync();
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Ошибка при обработке сообщения");
+                }
             }
         }
 
         public override async Task StopAsync(CancellationToken cancellationToken)
         {
-            _rabbitMQConnection.Close();
+            try
+            {
+                _rabbitMQConnection.Close();
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Ошибка при остановке сервиса");
+            }
             await base.StopAsync(cancellationToken);
         }
     }

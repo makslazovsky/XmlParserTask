@@ -17,4 +17,8 @@
     <ProjectReference Include="..\DataProcessorService\DataProcessorService.csproj" />
     <ProjectReference Include="..\SharedLibrary\SharedLibrary.csproj" />
   </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Logs\" />
+  </ItemGroup>
 </Project>
