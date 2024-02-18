@@ -3,7 +3,12 @@ using RabbitMQ.Client;
 using Serilog;
 using SharedLibrary.Models;
 using SharedLibrary.Utilities;
+using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Xml;
 
 namespace FileParserService
@@ -37,11 +42,18 @@ namespace FileParserService
             {
                 try
                 {
-                    // Processing XML files
-                    ProcessXmlFiles();
+                    // Get the list of XML files
+                    string[] xmlFiles = Directory.GetFiles(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "XmlFiles"), "*.xml");
 
-                    // Waiting for 1 second before checking for new files
-                    await Task.Delay(1000, stoppingToken);
+                    // Create and start tasks for processing each file
+                    var tasks = new List<Task>();
+                    foreach (var filePath in xmlFiles)
+                    {
+                        tasks.Add(Task.Run(() => ProcessXmlFile(filePath, stoppingToken)));
+                    }
+
+                    // Wait for all tasks to complete
+                    await Task.WhenAll(tasks);
                 }
                 catch (Exception ex)
                 {
@@ -49,47 +61,48 @@ namespace FileParserService
                     _logger.LogError(ex, "An error occurred");
                 }
 
+                // Pause before checking for new files again
+                await Task.Delay(1000, stoppingToken);
             }
         }
 
-        private void ProcessXmlFiles()
+        private void ProcessXmlFile(string filePath, CancellationToken stoppingToken)
         {
-            string directoryPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "XmlFiles");
-
-            // Creating directory if it doesn't exist
-            if (!Directory.Exists(directoryPath))
+            if (!File.Exists(filePath))
             {
-                Directory.CreateDirectory(directoryPath);
+                _logger.LogWarning($"File {filePath} not found.");
+                return;
             }
 
-            foreach (var filePath in Directory.GetFiles(directoryPath, "*.xml"))
+            try
             {
-                try
-                {
-                    // Parsing XML file
-                    XmlDocument xmlDoc = new XmlDocument();
-                    xmlDoc.Load(filePath);
+                // Load the XML file
+                XmlDocument xmlDoc = new XmlDocument();
+                xmlDoc.Load(filePath);
 
-                    // Extracting XML data and generating ModuleState
-                    var modules = ParseXml(xmlDoc);
+                // Extract data from XML and generate ModuleState
+                var modules = ParseXml(xmlDoc);
 
-                    // Converting to JSON
-                    var jsonResult = JsonConvert.SerializeObject(modules);
+                // Convert to JSON
+                var jsonResult = JsonConvert.SerializeObject(modules);
 
-                    // Sending JSON to DataProcessor Service via RabbitMQ
-                    SendMessageToDataProcessor(jsonResult);
-                }
-                catch (Exception ex)
-                {
-                    Log.Error(ex, "An error occurred while processing {FilePath}", filePath);
-                    _logger.LogError(ex, "An error occurred while processing {FilePath}", filePath);
-                }
+                // Send JSON to DataProcessor Service via RabbitMQ
+                SendMessageToDataProcessor(jsonResult);
+            }
+            catch (OperationCanceledException)
+            {
+                // The operation was cancelled, ignore
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "An error occurred while processing {FilePath}", filePath);
+                _logger.LogError(ex, "An error occurred while processing {FilePath}", filePath);
             }
         }
 
         private List<Module> ParseXml(XmlDocument xmlDoc)
         {
-            // Parsing XML and creating Module objects
+            // Parse XML and create Module objects
             var modules = new List<Module>();
             foreach (XmlNode node in xmlDoc.SelectNodes("//Module"))
             {
@@ -106,7 +119,7 @@ namespace FileParserService
 
         private string GetRandomModuleState()
         {
-            // Generating random ModuleState
+            // Generate random ModuleState
             var states = new[] { "Online", "Run", "NotReady", "Offline" };
             var random = new Random();
             return states[random.Next(states.Length)];
@@ -114,7 +127,7 @@ namespace FileParserService
 
         private void SendMessageToDataProcessor(string jsonResult)
         {
-            // Sending message to DataProcessor via RabbitMQ
+            // Send message to DataProcessor via RabbitMQ
             using (var channel = _rabbitMQConnection.CreateModel())
             {
                 channel.QueueDeclare(queue: "DataProcessorQueue",
