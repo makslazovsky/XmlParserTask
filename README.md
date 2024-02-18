@@ -6,7 +6,7 @@
 Скачайте решение по ссылке: https://github.com/makslazovsky/XmlParserTask.
 Отредактируйте файлы appsettings.json в проектах DataProcessorService и FileParserService, чтобы указать настройки для подключения к RabbitMQ и путь к базе данных SQLite.
 Скомпилируйте проекты DataProcessorService и FileParserService.
-Перенесите файлы XML из проекта FileParserService в папку XmlFiles в скомпилированный проект FileParserService.
+Перенесите папку XmlFiles из проекта FileParserService в папку скомпилированного проекта FileParserService.
 Скопируйте файл базы данных DataProcessorService.db из проекта DataProcessorService в скомпилированный проект DataProcessorService.
 Запустите FileParserService.exe, чтобы начать отправку и парсинг XML-файлов через RabbitMQ.
 После этого запустите DataProcessorService.exe, чтобы принимать сообщения через RabbitMQ и сохранять их в базе данных SQLite.
