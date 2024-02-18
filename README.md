@@ -1,7 +1,7 @@
 Требования
 Для развертывания системы на хосте и проведения проверки требуется выполнить следующие шаги:
 
-Установите необходимое программное обеспечение, такое как RabbitMQ, Erlang, SQLite и .NET SDK.
+Установите RabbitMQ, Erlang, SQLite и .NET SDK.
 Запустите и убедитесь в работоспособности RabbitMq.
 Скачайте решение по ссылке: https://github.com/makslazovsky/XmlParserTask.
 Отредактируйте файлы appsettings.json в проектах DataProcessorService и FileParserService, чтобы указать настройки для подключения к RabbitMQ и путь к базе данных SQLite.
