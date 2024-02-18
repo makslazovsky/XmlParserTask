@@ -1,4 +1,4 @@
-using Newtonsoft.Json;
+п»їusing Newtonsoft.Json;
 using RabbitMQ.Client;
 using Serilog;
 using SharedLibrary.Models;
@@ -17,7 +17,7 @@ namespace FileParserService
         {
             _logger = logger;
 
-            // Инициализация подключения к RabbitMQ
+            // Configuring connection to RabbitMQ
             var configuration = new ConfigurationBuilder()
                 .SetBasePath(Directory.GetCurrentDirectory())
                 .AddJsonFile("appsettings.json")
@@ -37,10 +37,10 @@ namespace FileParserService
             {
                 try
                 {
-                    // Чтение и обработка XML файлов
+                    // Processing XML files
                     ProcessXmlFiles();
 
-                    // Ожидание 1 секунды перед следующей итерацией
+                    // Waiting for 1 second before checking for new files
                     await Task.Delay(1000, stoppingToken);
                 }
                 catch (Exception ex)
@@ -56,7 +56,7 @@ namespace FileParserService
         {
             string directoryPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "XmlFiles");
 
-            // Создание папки, если её нет
+            // Creating directory if it doesn't exist
             if (!Directory.Exists(directoryPath))
             {
                 Directory.CreateDirectory(directoryPath);
@@ -66,17 +66,17 @@ namespace FileParserService
             {
                 try
                 {
-                    // Чтение XML файла
+                    // Parsing XML file
                     XmlDocument xmlDoc = new XmlDocument();
                     xmlDoc.Load(filePath);
 
-                    // Парсинг XML данных и изменение ModuleState
+                    // Extracting XML data and generating ModuleState
                     var modules = ParseXml(xmlDoc);
 
-                    // Формирование JSON
+                    // Converting to JSON
                     var jsonResult = JsonConvert.SerializeObject(modules);
 
-                    // Отправка JSON в DataProcessor Service через RabbitMQ
+                    // Sending JSON to DataProcessor Service via RabbitMQ
                     SendMessageToDataProcessor(jsonResult);
                 }
                 catch (Exception ex)
@@ -89,7 +89,7 @@ namespace FileParserService
 
         private List<Module> ParseXml(XmlDocument xmlDoc)
         {
-            // Логика парсинга XML и создания объектов Module
+            // Parsing XML and creating Module objects
             var modules = new List<Module>();
             foreach (XmlNode node in xmlDoc.SelectNodes("//Module"))
             {
@@ -106,7 +106,7 @@ namespace FileParserService
 
         private string GetRandomModuleState()
         {
-            // Метод для получения случайного значения ModuleState
+            // Generating random ModuleState
             var states = new[] { "Online", "Run", "NotReady", "Offline" };
             var random = new Random();
             return states[random.Next(states.Length)];
@@ -114,7 +114,7 @@ namespace FileParserService
 
         private void SendMessageToDataProcessor(string jsonResult)
         {
-            // Отправка сообщения в DataProcessor через RabbitMQ
+            // Sending message to DataProcessor via RabbitMQ
             using (var channel = _rabbitMQConnection.CreateModel())
             {
                 channel.QueueDeclare(queue: "DataProcessorQueue",
@@ -142,7 +142,7 @@ namespace FileParserService
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Ошибка при остановке сервиса");
+                Log.Error(ex, "Error occurred while closing connection");
             }
             await base.StopAsync(cancellationToken);
         }

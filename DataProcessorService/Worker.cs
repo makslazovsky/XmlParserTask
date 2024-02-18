@@ -18,7 +18,7 @@ namespace DataProcessorService
         {
             _scopeFactory = scopeFactory;
 
-            // Инициализация подключения к RabbitMQ
+            // Initializing connection to RabbitMQ
             var configuration = new ConfigurationBuilder()
                 .SetBasePath(Directory.GetCurrentDirectory())
                 .AddJsonFile("appsettings.json")
@@ -51,15 +51,15 @@ namespace DataProcessorService
                         var jsonMessage = Encoding.UTF8.GetString(body);
                         var module = JsonConvert.DeserializeObject<List<Module>>(jsonMessage);
 
-                        // Обработка сообщения
+                        // Processing the received message
                         await ProcessMessage(module);
 
-                        // Подтверждение обработки сообщения
+                        // Acknowledging the message processing
                         channel.BasicAck(deliveryTag: ea.DeliveryTag, multiple: false);
                     }
                     catch (Exception ex)
                     {
-                        Log.Error(ex, "Ошибка при обработке сообщения");
+                        Log.Error(ex, "Error occurred while processing the message");
                     }
                 };
 
@@ -82,7 +82,7 @@ namespace DataProcessorService
 
                 try
                 {
-                    // Проверка существования ModuleCategoryID в базе данных
+                    // Checking the existence of ModuleCategoryID in the database
                     foreach (var module in modules)
                     {
                         var existingModule = await dbContext.Modules.FirstOrDefaultAsync(m => m.ModuleId == module.ModuleId);
@@ -101,7 +101,7 @@ namespace DataProcessorService
                 }
                 catch (Exception ex)
                 {
-                    Log.Error(ex, "Ошибка при обработке сообщения");
+                    Log.Error(ex, "Error occurred while processing the message");
                 }
             }
         }
@@ -114,7 +114,7 @@ namespace DataProcessorService
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Ошибка при остановке сервиса");
+                Log.Error(ex, "Error occurred while stopping the service");
             }
             await base.StopAsync(cancellationToken);
         }

@@ -28,7 +28,7 @@ namespace DataProcessorService.Migrations
 
                     b.HasKey("ModuleId");
 
-                    b.ToTable("Modules");
+                    b.ToTable("Modules", (string)null);
                 });
 #pragma warning restore 612, 618
         }

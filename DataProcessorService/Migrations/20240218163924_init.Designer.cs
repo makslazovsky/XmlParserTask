@@ -10,7 +10,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DataProcessorService.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20240216141855_init")]
+    [Migration("20240218163924_init")]
     partial class init
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -30,7 +30,7 @@ namespace DataProcessorService.Migrations
 
                     b.HasKey("ModuleId");
 
-                    b.ToTable("Modules");
+                    b.ToTable("Modules", (string)null);
                 });
 #pragma warning restore 612, 618
         }

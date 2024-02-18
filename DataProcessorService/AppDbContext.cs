@@ -13,6 +13,7 @@ namespace DataProcessorService
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.Entity<Module>().ToTable("Modules");
         }
     }
 }
