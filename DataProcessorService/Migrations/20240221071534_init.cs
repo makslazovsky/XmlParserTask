@@ -12,13 +12,12 @@ namespace DataProcessorService.Migrations
                 name: "Modules",
                 columns: table => new
                 {
-                    ModuleId = table.Column<int>(type: "INTEGER", nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
+                    ModuleCategoryID = table.Column<string>(type: "TEXT", nullable: false),
                     ModuleState = table.Column<string>(type: "TEXT", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Modules", x => x.ModuleId);
+                    table.PrimaryKey("PK_Modules", x => x.ModuleCategoryID);
                 });
         }
 

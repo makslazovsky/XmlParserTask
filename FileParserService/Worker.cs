@@ -73,7 +73,6 @@ namespace FileParserService
                 _logger.LogWarning($"File {filePath} not found.");
                 return;
             }
-
             try
             {
                 // Load the XML file
@@ -104,14 +103,16 @@ namespace FileParserService
         {
             // Parse XML and create Module objects
             var modules = new List<Module>();
-            foreach (XmlNode node in xmlDoc.SelectNodes("//Module"))
+            foreach (XmlNode node in xmlDoc.SelectNodes("//DeviceStatus"))
             {
-                var module = new Module
-                {
-                    ModuleId = int.Parse(node.SelectSingleNode("ModuleId").InnerText),
-                    ModuleState = GetRandomModuleState()
-                };
-                modules.Add(module);
+                XmlNode moduleCategoryIDNode = node.SelectSingleNode("ModuleCategoryID");
+
+                    var module = new Module
+                    {
+                        ModuleCategoryID = moduleCategoryIDNode.InnerText,
+                        ModuleState = GetRandomModuleState()
+                    };
+                    modules.Add(module);
             }
 
             return modules;
@@ -127,7 +128,6 @@ namespace FileParserService
 
         private void SendMessageToDataProcessor(string jsonResult)
         {
-            // Send message to DataProcessor via RabbitMQ
             using (var channel = _rabbitMQConnection.CreateModel())
             {
                 channel.QueueDeclare(queue: "DataProcessorQueue",

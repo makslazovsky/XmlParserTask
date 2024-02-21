@@ -85,7 +85,7 @@ namespace DataProcessorService
                     // Checking the existence of ModuleCategoryID in the database
                     foreach (var module in modules)
                     {
-                        var existingModule = await dbContext.Modules.FirstOrDefaultAsync(m => m.ModuleId == module.ModuleId);
+                        var existingModule = await dbContext.Modules.FirstOrDefaultAsync(m => m.ModuleCategoryID == module.ModuleCategoryID);
 
                         if (existingModule != null)
                         {

@@ -10,7 +10,8 @@ namespace SharedLibrary.Models
     public class Module
     {
         [Key]
-        public int ModuleId { get; set; }
+        public string ModuleCategoryID { get; set; }
         public string ModuleState { get; set; }
+        
     }
 }

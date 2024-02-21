@@ -10,7 +10,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DataProcessorService.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20240218163924_init")]
+    [Migration("20240221071534_init")]
     partial class init
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -20,15 +20,14 @@ namespace DataProcessorService.Migrations
 
             modelBuilder.Entity("SharedLibrary.Models.Module", b =>
                 {
-                    b.Property<int>("ModuleId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
+                    b.Property<string>("ModuleCategoryID")
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("ModuleState")
                         .IsRequired()
                         .HasColumnType("TEXT");
 
-                    b.HasKey("ModuleId");
+                    b.HasKey("ModuleCategoryID");
 
                     b.ToTable("Modules", (string)null);
                 });
